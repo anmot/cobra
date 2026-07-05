@@ -1,5 +1,6 @@
 import * as THREE from "https://esm.sh/three@0.185.0";
 import { OrbitControls } from "https://esm.sh/three@0.185.0/examples/jsm/controls/OrbitControls.js";
+import { FontLoader } from "https://esm.sh/three@0.185.0/addons/loaders/FontLoader.js";
 
 const points = [
   { name: "B1", pos: [-23.24, 13.14, 14.6], type: 0 },
@@ -58,6 +59,24 @@ function mapPoint(pos) {
   // Scambia y con z;
   // Converte x = -x NB: !!!!! -pos[0] !!!!!, altrimenti le posizioni risultano speculari
   return [-pos[0], pos[2], pos[1]];
+}
+
+function makeLabelStrada(text) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = 256;
+  canvas.height = 96;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.font = "bold 48px Segoe UI";
+  ctx.fillStyle = "rgba(20, 34, 18, 0.95)";
+  ctx.fillText(text, 8, 50);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  const material = new THREE.SpriteMaterial({ map: texture, depthWrite: false });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(4.4, 1.65, 1);
+  return sprite;
 }
 
 function makeLabelSprite(text) {
@@ -264,6 +283,10 @@ export function initFicus3D({
   //axes.position.set(-27, -10, -1);
   axes.position.set(0, 0, 0);
   scene.add(axes);
+
+  let label = makeLabelStrada("Lato Steri");
+  label.position.set(20, 0, -5);
+  scene.add(label);
 
   points.forEach((point) => addPoint(scene, point));
 
