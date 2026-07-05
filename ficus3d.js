@@ -96,11 +96,11 @@ function addPoint(scene, point) {
 }
 
 function addCube(scene, point) {
-  const geometry = new THREE.BoxGeometry(point.type === 1 ? 1.86 : 0.68, point.type === 1 ? 1.86 : 0.68, point.type === 1 ? 1.86 : 0.68);
+  const geometry = new THREE.BoxGeometry(2, 2, 2);
   const material = new THREE.MeshStandardMaterial({
     color: 0xff1111, //pointColors[3],// pointColors[point.type],
     roughness: 0.42,
-    metalness: 0.08
+    metalness: 15.0
   });
   const cube = new THREE.Mesh(geometry, material);
   const p = mapPoint(point.pos);
