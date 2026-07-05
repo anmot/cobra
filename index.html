@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FicusPM 3D - Three.js</title>
+  <link rel="stylesheet" href="./ficus3d.css">
+  <script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+  <div class="legend">
+    <!-- <h4>FicusPM 3D</h4> -->
+    <p><code>Blu</code>: branche</p>
+    <p><code>Viola</code>: branche "malate"</p>
+    <p><code>Marrone</code>: recinzione</p>
+    <p><br/><b>Configurazione ancoraggi</b></p>
+    <p>A stella: <code>Verde + Verde chiaro</code></p>
+    <p></p>
+    <p>A mesh/rete: <code>Rosso</code></p>
+    <br/>
+    <p><em>Seleziona per visualizzare la configurazione</em></p>
+    <select id="modeSelect" aria-label="Modalita supporti">
+      <option value="nessuno">No ancoraggi</option>
+      <option value="stella">Modalita Stella</option>
+      <option value="mesh">Modalita Mesh</option>
+    </select>
+    <p><br/><b>Camera</b></p>
+    <select id="cameraModeSelect" aria-label="Tipo camera">
+      <option value="perspective">Prospettica</option>
+      <option value="orthographic">Ortografica</option>
+    </select>
+    <p>Mouse: sinistro: ruota, rotella: zoom, destro: sposta</p>
+  </div>
+  <div id="app"></div>
+
+  <script type="module">
+    import { initFicus3D } from "./ficus3d.js";
+
+    initFicus3D({
+      appId: "app",
+      modeSelectId: "modeSelect",
+      defaultMode: "stella",
+      cameraModeSelectId: "cameraModeSelect",
+      defaultCameraMode: "perspective"
+      //defaultMode: "nessuno"
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+:root {
+  --bg-1: #eef6ed;
+  --bg-2: #dbe7d3;
+  --panel-bg: rgba(255, 255, 255, 0.86);
+  --panel-border: rgba(45, 63, 36, 0.22);
+  --text: #1f2f1e;
+  --muted: #4f5f4a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(circle at 22% 18%, var(--bg-1), var(--bg-2));
+  color: var(--text);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+.panel,
+.legend {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 10;
+  width: min(340px, calc(100vw - 28px));
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  backdrop-filter: blur(4px);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.panel h1,
+.legend h1 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.panel p,
+.legend p {
+  margin: 3px 0;
+  color: var(--muted);
+}
+
+.panel code,
+.legend code {
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.panel select,
+.legend select {
+  margin-top: 8px;
+  width: 100%;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 13px;
+  color: var(--text);
+  background: #ffffff;
+}
