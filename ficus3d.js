@@ -95,6 +95,23 @@ function addPoint(scene, point) {
   scene.add(label);
 }
 
+function addCube(scene, point) {
+  const geometry = new THREE.BoxGeometry(point.type === 1 ? 1.86 : 0.68, point.type === 1 ? 1.86 : 0.68, point.type === 1 ? 1.86 : 0.68);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xff1111, //pointColors[3],// pointColors[point.type],
+    roughness: 0.42,
+    metalness: 0.08
+  });
+  const cube = new THREE.Mesh(geometry, material);
+  const p = mapPoint(point.pos);
+  cube.position.set(...p);
+  scene.add(cube);
+
+  const label = makeLabelSprite(point.name);
+  label.position.set(p[0] + 0.65, p[1] + 0.7, p[2] + 0.65);
+  scene.add(label);
+}
+
 function addLine(scene, start, end, color) {
   const a = mapPoint(start);
   const b = mapPoint(end);
@@ -212,6 +229,10 @@ export function initFicus3D({
   points.forEach((point) => addPoint(scene, point));
 
   const byName = Object.fromEntries(points.map((p) => [p.name, p]));
+
+  // posizione del centro dell'albero
+  const centro = byName.centro;
+  addCube(scene, centro);
 
   const sez_rope = 0.2;
   const sez_branche = 0.7;
