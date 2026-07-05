@@ -180,6 +180,9 @@ function clearGroup(group) {
 
 export function initFicus3D({
   appId = "app",
+  legendId = "legend",
+  legendToggleId = "legendToggle",
+  legendContentId = "legendContent",
   modeSelectId = "modeSelect",
   defaultMode = "rope",
   cameraModeSelectId = "cameraModeSelect",
@@ -188,6 +191,42 @@ export function initFicus3D({
   const app = document.getElementById(appId);
   if (!app) {
     throw new Error(`Elemento #${appId} non trovato.`);
+  }
+
+  const legend = document.getElementById(legendId);
+  const legendToggle = document.getElementById(legendToggleId);
+  const legendContent = document.getElementById(legendContentId);
+
+  function setLegendCollapsed(collapsed) {
+    if (!legend || !legendToggle || !legendContent) {
+      return;
+    }
+
+    legend.dataset.collapsed = String(collapsed);
+    legendToggle.setAttribute("aria-expanded", String(!collapsed));
+    legendToggle.textContent = collapsed ? "Espandi legenda" : "Riduci legenda";
+    legendContent.hidden = collapsed;
+
+    try {
+      window.localStorage.setItem("ficus3d.legendCollapsed", String(collapsed));
+    } catch {
+      // Ignore storage errors in restricted environments.
+    }
+  }
+
+  if (legend && legendToggle && legendContent) {
+    let collapsed = false;
+
+    try {
+      collapsed = window.localStorage.getItem("ficus3d.legendCollapsed") === "true";
+    } catch {
+      collapsed = false;
+    }
+
+    setLegendCollapsed(collapsed);
+    legendToggle.addEventListener("click", () => {
+      setLegendCollapsed(legend.dataset.collapsed !== "true");
+    });
   }
 
   const scene = new THREE.Scene();
