@@ -204,7 +204,7 @@ export function initFicus3D({
 
     legend.dataset.collapsed = String(collapsed);
     legendToggle.setAttribute("aria-expanded", String(!collapsed));
-    legendToggle.textContent = collapsed ? "Espandi legenda" : "Riduci legenda";
+    legendToggle.textContent = collapsed ? "Scegli configurazione" : "Chiudi";
     legendContent.hidden = collapsed;
 
     try {
