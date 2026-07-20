@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Forze di trazione ancoraggi</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/two.js/0.8.10/two.min.js"></script>
+  <style>
+    h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      color: #333;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    canvas {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Forze di trazione ancoraggi</h1>
+  <p style="
+        max-width: 600px;
+        margin-bottom: 20px;
+        color: #22f;
+        font-size: large;
+      ">
+    Dato il peso della branca (<b><code>var peso = 100</code></b>) e la posizione del baricentro <b>D</b>, calcola le
+    forze di trazione
+    (<b>Tf</b>) e compressione (<b>Cf</b>) in base ai lati del triangolo
+    <b>ABC</b>.
+  </p>
+  <ul>
+    <li>
+      Wf = forza peso (lato b, vertici AC), riscalata in base alla distanza
+      dal baricentro (D)
+    </li>
+    <li>
+      Tf = forza di trazione della fune (lato a, vertici BC) rispetto ai punti
+      di ancoraggio B e C
+    </li>
+    <li>
+      Cf = forza di compressione verso il punto di inserzione della branca sul
+      fusto (lato c, vertici AB)
+    </li>
+  </ul>
+  <label style="
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 0 14px 0;
+        color: #44f;
+        font-size: 16px;
+      ">
+    <input type="checkbox" id="toggle-rect" checked />
+    Mostra branca -<span style="color: #ff8c00; font-size: 24px">&#x25CF;</span>
+    baricentro, Punto <b style="color: #44f; margin: 0 0 0 0">D</b>
+  </label>
+
+  <div style="max-width: 420px; margin: 0 0 18px 0">
+    <label>
+      Angolo segmento AB rispetto alla verticale:
+      <span id="angle-ab-value">0.0°</span>
+    </label>
+    <input type="range" id="angle-ab" min="-90" max="90" value="0" step="1" />
+  </div>
+
+  <table columns="3">
+    <tr>
+      <td>
+        <h3 style="color: #ff4757">Punto A</h3>
+        <label>X:
+          <input type="range" id="ax" min="80" max="500" value="80" step="20" /></label>
+        <label>Y:
+          <input type="range" id="ay" min="0" max="500" value="320" step="20" /></label>
+      </td>
+      <td>
+        <h3 style="color: #2ed573">Punto B</h3>
+        <label>X:
+          <input type="range" id="bx" min="80" max="500" value="320" step="20" /></label>
+        <label>Y:
+          <input type="range" id="by" min="0" max="500" value="320" step="20" /></label>
+      </td>
+      <td>
+        <h3 style="color: #1e90ff">Punto C</h3>
+        <label>X:
+          <input type="range" id="cx" min="80" max="500" value="80" step="20" /></label>
+        <label>Y:
+          <input type="range" id="cy" min="0" max="320" value="80" step="20" /></label>
+      </td>
+    </tr>
+  </table>
+
+  <table border="0">
+    <tr>
+      <td>
+        <table border="1" cellspacing="0" cellpadding="6" style="margin: 12px 0; border-collapse: collapse">
+          <thead>
+            <tr>
+              <th>Vertice</th>
+              <th>X</th>
+              <th>Y</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A</td>
+              <td id="coord-ax">0</td>
+              <td id="coord-ay">0</td>
+            </tr>
+            <tr>
+              <td>B</td>
+              <td id="coord-bx">0</td>
+              <td id="coord-by">0</td>
+            </tr>
+            <tr>
+              <td>C</td>
+              <td id="coord-cx">0</td>
+              <td id="coord-cy">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+
+      <td>
+        <table border="1" cellspacing="0" cellpadding="6" style="margin: 12px 0; border-collapse: collapse">
+          <thead>
+            <tr>
+              <th>Segmento</th>
+              <th>Lunghezza</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>BC (lato a)</td>
+              <td id="len-bc">0.0</td>
+            </tr>
+            <tr>
+              <td>AC (lato b)</td>
+              <td id="len-ac">0.0</td>
+            </tr>
+            <tr>
+              <td>AB (lato c)</td>
+              <td id="len-ab">0.0</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+
+      <td>
+        <table border="1" cellspacing="0" cellpadding="6" style="margin: 12px 0; border-collapse: collapse">
+          <thead>
+            <tr>
+              <th>Forza</th>
+              <th>Valore</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tf (lato a, vertici BC)</td>
+              <td id="force-Tf">0.0</td>
+            </tr>
+            <tr>
+              <td>Wf (lato b, vertici AC)</td>
+              <td id="force-Wf">0.0</td>
+            </tr>
+            <tr>
+              <td>Cf (lato c, vertici AB)</td>
+              <td id="force-Cf">0.0</td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <div id="canvas-container"></div>
+
+  <script>
+    const CANVAS_SIZE = { width: 600, height: 600 };
+    const RECTANGLE_LENGTH = 400;
+    const RECTANGLE_HALF_HEIGHT = 15;
+    const POINT_RADIUS = 7;
+    const FALLBACK_WEIGHT = 100;
+
+    const container = document.getElementById("canvas-container");
+    const params = { ...CANVAS_SIZE, type: Two.Types.canvas };
+    const two = new Two(params).appendTo(container);
+
+    const sliders = {
+      ax: document.getElementById("ax"),
+      ay: document.getElementById("ay"),
+      bx: document.getElementById("bx"),
+      by: document.getElementById("by"),
+      cx: document.getElementById("cx"),
+      cy: document.getElementById("cy"),
+    };
+    const toggleRect = document.getElementById("toggle-rect");
+    const angleABSlider = document.getElementById("angle-ab");
+    const angleABValue = document.getElementById("angle-ab-value");
+
+    sliders.bx.step = "0.01";
+    sliders.by.step = "0.01";
+
+    const A = { x: 0, y: 0 };
+    const B = { x: 0, y: 0 };
+    const C = { x: 0, y: 0 };
+
+    // Celle della tabella delle lunghezze dei segmenti
+    const lengthCells = {
+      ab: document.getElementById("len-ab"),
+      ac: document.getElementById("len-ac"),
+      bc: document.getElementById("len-bc"),
+    };
+
+    const coordinateCells = {
+      ax: document.getElementById("coord-ax"),
+      ay: document.getElementById("coord-ay"),
+      bx: document.getElementById("coord-bx"),
+      by: document.getElementById("coord-by"),
+      cx: document.getElementById("coord-cx"),
+      cy: document.getElementById("coord-cy"),
+    };
+
+    const forceCells = {
+      Wf: document.getElementById("force-Wf"),
+      Tf: document.getElementById("force-Tf"),
+      Cf: document.getElementById("force-Cf"),
+    };
+
+    const triangolo = two.makePath(0, 0, 0, 0, 0, 0, false);
+    triangolo.closed = true;
+    triangolo.fill = "rgba(0, 150, 255, 0.15)";
+    triangolo.stroke = "#007bff";
+    triangolo.linewidth = 3;
+
+    const branca = two.makeLine(0, 0, 0, 0);
+    branca.stroke = "#ff6b81";
+    branca.linewidth = 10;
+
+    const rettangoloAB = two.makePath(0, 0, 0, 0, 0, 0, 0, 0, false);
+    rettangoloAB.fill = "rgba(255, 165, 0, 0.25)";
+    rettangoloAB.stroke = "#ff8c00";
+    rettangoloAB.linewidth = 2;
+
+    const controlloRettangolo = two.makeCircle(0, 0, 6);
+    controlloRettangolo.fill = "#ff8c00";
+    controlloRettangolo.stroke = "#ffffff";
+    controlloRettangolo.linewidth = 2;
+
+    const puntoA = two.makeCircle(0, 0, POINT_RADIUS);
+    const puntoB = two.makeCircle(0, 0, POINT_RADIUS);
+    const puntoC = two.makeCircle(0, 0, POINT_RADIUS);
+    const puntoD = controlloRettangolo;
+
+    puntoA.fill = "#ff4757";
+    puntoA.stroke = "#fff";
+    puntoA.linewidth = 2;
+    puntoB.fill = "#2ed573";
+    puntoB.stroke = "#fff";
+    puntoB.linewidth = 2;
+    puntoC.fill = "#1e90ff";
+    puntoC.stroke = "#fff";
+    puntoC.linewidth = 2;
+
+    const stileTesto = {
+      size: 16,
+      family: "sans-serif",
+      weight: 600,
+      fill: "#2f35AA",
+    };
+    const testoA = two.makeText("", 0, 0, stileTesto);
+    const testoB = two.makeText("", 0, 0, stileTesto);
+    const testoC = two.makeText("", 0, 0, stileTesto);
+
+    const stileTesto_lato = {
+      size: 14,
+      family: "sans-serif",
+      weight: 600,
+      fill: "brown",
+    };
+    const lato_a = two.makeText("a (Tf)", 0, 0, stileTesto_lato);
+    const lato_b = two.makeText("b (Wf)", 0, 0, stileTesto_lato);
+    const lato_c = two.makeText("c (Cf)", 0, 0, stileTesto_lato);
+
+    let draggingB = false;
+    let lunghezzaABInRotazione = null;
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function estendiRangeSeNecessario(slider, value) {
+      const min = parseFloat(slider.min);
+      const max = parseFloat(slider.max);
+      if (value < min) slider.min = Math.floor(value).toString();
+      if (value > max) slider.max = Math.ceil(value).toString();
+    }
+
+    function getMouseCanvasPosition(event) {
+      const rect = two.renderer.domElement.getBoundingClientRect();
+      const scaleX = params.width / rect.width;
+      const scaleY = params.height / rect.height;
+      return {
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY,
+      };
+    }
+
+    function readPointFromSliders(prefix) {
+      return {
+        x: parseFloat(sliders[`${prefix}x`].value),
+        y: parseFloat(sliders[`${prefix}y`].value),
+      };
+    }
+
+    function syncPointsFromSliders() {
+      Object.assign(A, readPointFromSliders("a"));
+      Object.assign(B, readPointFromSliders("b"));
+      Object.assign(C, readPointFromSliders("c"));
+    }
+
+    function setCirclePosition(circle, point) {
+      circle.translation.set(point.x, point.y);
+    }
+
+    function setPathVertices(path, points) {
+      points.forEach((point, index) => {
+        path.vertices[index].set(point.x, point.y);
+      });
+    }
+
+    function updateCoordinateTable() {
+      coordinateCells.ax.textContent = A.x.toFixed(1);
+      coordinateCells.ay.textContent = A.y.toFixed(1);
+      coordinateCells.bx.textContent = B.x.toFixed(1);
+      coordinateCells.by.textContent = B.y.toFixed(1);
+      coordinateCells.cx.textContent = C.x.toFixed(1);
+      coordinateCells.cy.textContent = C.y.toFixed(1);
+    }
+
+    function updateLengthTable(a, b, c) {
+      lengthCells.ab.textContent = c.toFixed(1);
+      lengthCells.ac.textContent = b.toFixed(1);
+      lengthCells.bc.textContent = a.toFixed(1);
+    }
+
+    function computeTriangleAngles(a, b, c) {
+      if (!(a > 0 && b > 0 && c > 0)) {
+        return { radA: 0, radB: 0, radC: 0, degA: "0.0", degB: "0.0", degC: "0.0" };
+      }
+
+      const radA = Math.acos(Math.max(-1, Math.min(1, (b * b + c * c - a * a) / (2 * b * c))));
+      const radB = Math.acos(Math.max(-1, Math.min(1, (a * a + c * c - b * b) / (2 * a * c))));
+      const radC = Math.acos(Math.max(-1, Math.min(1, (a * a + b * b - c * c) / (2 * a * b))));
+
+      return {
+        radA,
+        radB,
+        radC,
+        degA: ((radA * 180) / Math.PI).toFixed(1),
+        degB: ((radB * 180) / Math.PI).toFixed(1),
+        degC: ((radC * 180) / Math.PI).toFixed(1),
+      };
+    }
+
+    function updateAngleSliderFromAB() {
+      const dxAB = B.x - A.x;
+      const dyAB = B.y - A.y;
+      const angleOrizzontaleDeg = (Math.atan2(dyAB, dxAB) * 180) / Math.PI;
+      const angleSliderDeg = normalizzaAngolo(-angleOrizzontaleDeg);
+      const angleVerticaleDeg = normalizzaAngolo(90 + angleOrizzontaleDeg);
+      angleABSlider.value = angleSliderDeg.toFixed(1);
+      angleABValue.textContent = `${angleVerticaleDeg.toFixed(1)}°`;
+    }
+
+    function updateTriangleAndBranch() {
+      setPathVertices(triangolo, [A, B, C]);
+      setPathVertices(branca, [A, B]);
+    }
+
+    function updateRectangleGeometry() {
+      const dxAB = B.x - A.x;
+      const dyAB = B.y - A.y;
+      const lenAB = Math.hypot(dxAB, dyAB);
+
+      const ux = lenAB > 0 ? dxAB / lenAB : 1;
+      const uy = lenAB > 0 ? dyAB / lenAB : 0;
+      const nx = -uy;
+      const ny = ux;
+
+      const p1x = A.x + nx * RECTANGLE_HALF_HEIGHT;
+      const p1y = A.y + ny * RECTANGLE_HALF_HEIGHT;
+      const p2x = A.x - nx * RECTANGLE_HALF_HEIGHT;
+      const p2y = A.y - ny * RECTANGLE_HALF_HEIGHT;
+      const p3x = A.x + ux * RECTANGLE_LENGTH - nx * RECTANGLE_HALF_HEIGHT;
+      const p3y = A.y + uy * RECTANGLE_LENGTH - ny * RECTANGLE_HALF_HEIGHT;
+      const p4x = A.x + ux * RECTANGLE_LENGTH + nx * RECTANGLE_HALF_HEIGHT;
+      const p4y = A.y + uy * RECTANGLE_LENGTH + ny * RECTANGLE_HALF_HEIGHT;
+
+      rettangoloAB.vertices[0].set(p1x, p1y);
+      rettangoloAB.vertices[1].set(p2x, p2y);
+      rettangoloAB.vertices[2].set(p3x, p3y);
+      rettangoloAB.vertices[3].set(p4x, p4y);
+
+      const centroRettX = A.x + ux * (RECTANGLE_LENGTH / 2);
+      const centroRettY = A.y + uy * (RECTANGLE_LENGTH / 2);
+      controlloRettangolo.translation.set(centroRettX, centroRettY);
+
+      const mostraRettangolo = toggleRect.checked;
+      rettangoloAB.visible = mostraRettangolo;
+      controlloRettangolo.visible = mostraRettangolo;
+
+      setCirclePosition(puntoA, A);
+      setCirclePosition(puntoB, B);
+      setCirclePosition(puntoC, C);
+      puntoD.translation.set(centroRettX, centroRettY);
+
+      return { centroRettX, centroRettY };
+    }
+
+    function updateForces(centroRettX, centroRettY, radA, radB, radC, dAB) {
+      const dAD = Math.hypot(centroRettX - A.x, centroRettY - A.y);
+      const Wf = dAB > 0 ? (FALLBACK_WEIGHT * dAD) / dAB : 0;
+
+      const sinA = Math.sin(radA);
+      const sinB = Math.sin(radB);
+      const sinC = Math.sin(radC);
+
+      let Tf = 0;
+      let Cf = 0;
+      if (Math.abs(sinB) >= 0.01) {
+        Tf = (Wf * sinA) / sinB;
+        Cf = (Wf * sinC) / sinB;
+      }
+
+      forceCells.Wf.textContent = Wf.toFixed(1);
+      forceCells.Tf.textContent = Tf.toFixed(1);
+      forceCells.Cf.textContent = Cf.toFixed(1);
+    }
+
+    function startDragB(event) {
+      const mouse = getMouseCanvasPosition(event);
+      const hitRadius = POINT_RADIUS + 6;
+      if (Math.hypot(mouse.x - B.x, mouse.y - B.y) <= hitRadius) {
+        draggingB = true;
+        event.preventDefault();
+      }
+    }
+
+    function dragB(event) {
+      if (!draggingB) return;
+      const mouse = getMouseCanvasPosition(event);
+      const minX = parseFloat(sliders.bx.min);
+      const maxX = parseFloat(sliders.bx.max);
+      const minY = parseFloat(sliders.by.min);
+      const maxY = parseFloat(sliders.by.max);
+
+      sliders.bx.value = clamp(mouse.x, minX, maxX);
+      sliders.by.value = clamp(mouse.y, minY, maxY);
+      aggiornaGeometria();
+    }
+
+    function endDragB() {
+      draggingB = false;
+    }
+
+    function normalizzaAngolo(angleDeg) {
+      return ((angleDeg + 180) % 360 + 360) % 360 - 180;
+    }
+
+    function iniziaRotazioneAB() {
+      A.x = parseFloat(sliders.ax.value);
+      A.y = parseFloat(sliders.ay.value);
+      B.x = parseFloat(sliders.bx.value);
+      B.y = parseFloat(sliders.by.value);
+      lunghezzaABInRotazione = Math.hypot(B.x - A.x, B.y - A.y);
+    }
+
+    function terminaRotazioneAB() {
+      lunghezzaABInRotazione = null;
+    }
+
+    function aggiornaSliderAngoloAB() {
+      updateAngleSliderFromAB();
+    }
+
+    function ruotaBIntornoA() {
+      A.x = parseFloat(sliders.ax.value);
+      A.y = parseFloat(sliders.ay.value);
+      B.x = parseFloat(sliders.bx.value);
+      B.y = parseFloat(sliders.by.value);
+
+      if (lunghezzaABInRotazione === null) {
+        lunghezzaABInRotazione = Math.hypot(B.x - A.x, B.y - A.y);
+      }
+      const lunghezzaAB = lunghezzaABInRotazione;
+      const angoloSliderDeg = parseFloat(angleABSlider.value);
+      const angoloOrizzontaleRad = (-angoloSliderDeg * Math.PI) / 180;
+
+      const nuovoBx = A.x + lunghezzaAB * Math.cos(angoloOrizzontaleRad);
+      const nuovoBy = A.y + lunghezzaAB * Math.sin(angoloOrizzontaleRad);
+
+      // Mantiene AB costante: evita clamp ai limiti correnti degli slider B.
+      estendiRangeSeNecessario(sliders.bx, nuovoBx);
+      estendiRangeSeNecessario(sliders.by, nuovoBy);
+
+      sliders.bx.value = nuovoBx;
+      sliders.by.value = nuovoBy;
+
+      aggiornaGeometria();
+    }
+
+    // 3. Funzione logica principale per aggiornare dati e grafica
+    function aggiornaGeometria() {
+      syncPointsFromSliders();
+      aggiornaSliderAngoloAB();
+      updateCoordinateTable();
+
+      const a = Math.hypot(C.x - B.x, C.y - B.y);
+      const b = Math.hypot(C.x - A.x, C.y - A.y);
+      const c = Math.hypot(B.x - A.x, B.y - A.y);
+      updateLengthTable(a, b, c);
+
+      const { radA, radB, radC, degA, degB, degC } = computeTriangleAngles(a, b, c);
+
+      updateTriangleAndBranch();
+      const { centroRettX, centroRettY } = updateRectangleGeometry();
+      updateForces(centroRettX, centroRettY, radA, radB, radC, c);
+
+      testoA.value = `A (${degA}°)`;
+      testoA.translation.set(A.x - 30, A.y + 25);
+
+      testoB.value = `B (${degB}°)`;
+      testoB.translation.set(B.x + 30, B.y + 25);
+
+      testoC.value = `C (${degC}°)`;
+      testoC.translation.set(C.x, C.y - 25);
+
+      lato_a.translation.set(
+        C.x + (B.x - C.x) / 2 + 15,
+        C.y + (B.y - C.y) / 2 - 15,
+      );
+      lato_b.translation.set(
+        C.x + (A.x - C.x) / 2 - 25,
+        C.y - (C.y - A.y) / 2,
+      );
+      lato_c.translation.set(
+        A.x + (B.x - A.x) / 2,
+        B.y + (A.y - B.y) / 2 + 25,
+      );
+
+      two.update();
+    }
+
+    Object.values(sliders).forEach((slider) => {
+      slider.addEventListener("input", aggiornaGeometria);
+    });
+    toggleRect.addEventListener("input", aggiornaGeometria);
+    angleABSlider.addEventListener("mousedown", iniziaRotazioneAB);
+    angleABSlider.addEventListener("touchstart", iniziaRotazioneAB);
+    angleABSlider.addEventListener("input", ruotaBIntornoA);
+    angleABSlider.addEventListener("change", terminaRotazioneAB);
+    window.addEventListener("mouseup", terminaRotazioneAB);
+    window.addEventListener("touchend", terminaRotazioneAB);
+
+    two.renderer.domElement.addEventListener("mousedown", startDragB);
+    window.addEventListener("mousemove", dragB);
+    window.addEventListener("mouseup", endDragB);
+
+    // Avvio iniziale
+    aggiornaGeometria();
+  </script>
+</body>
+
+</html>
