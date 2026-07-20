@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>Forze di trazione ancoraggi</title>
+  <title>Forze di trazione ancoraggi (2D)</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/two.js/0.8.10/two.min.js"></script>
   <style>
     h3 {
@@ -33,7 +33,7 @@
 </head>
 
 <body>
-  <h1>Forze di trazione ancoraggi</h1>
+  <h1>Forze di trazione ancoraggi (2D)</h1>
   <p style="
         max-width: 600px;
         margin-bottom: 20px;
@@ -67,9 +67,21 @@
         color: #44f;
         font-size: 16px;
       ">
-    <input type="checkbox" id="toggle-rect" checked />
+    <input type="checkbox" id="toggle-branca" checked />
     Mostra branca -<span style="color: #ff8c00; font-size: 24px">&#x25CF;</span>
     baricentro, Punto <b style="color: #44f; margin: 0 0 0 0">D</b>
+  </label>
+
+  <label style="
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 14px 0;
+        color: #228b22;
+        font-size: 16px;
+      ">
+    <input type="checkbox" id="lock-b-to-d" />
+    Forza la posizione di <b>B</b> sul baricentro <b>D</b>
   </label>
 
   <div style="max-width: 420px; margin: 0 0 18px 0">
@@ -210,7 +222,8 @@
       cx: document.getElementById("cx"),
       cy: document.getElementById("cy"),
     };
-    const toggleRect = document.getElementById("toggle-rect");
+    const toggleBranca = document.getElementById("toggle-branca");
+    const lockBToD = document.getElementById("lock-b-to-d");
     const angleABSlider = document.getElementById("angle-ab");
     const angleABValue = document.getElementById("angle-ab-value");
 
@@ -258,15 +271,15 @@
     rettangoloAB.stroke = "#ff8c00";
     rettangoloAB.linewidth = 2;
 
-    const controlloRettangolo = two.makeCircle(0, 0, 6);
-    controlloRettangolo.fill = "#ff8c00";
-    controlloRettangolo.stroke = "#ffffff";
-    controlloRettangolo.linewidth = 2;
+    const controlloBaricentro = two.makeCircle(0, 0, 6);
+    controlloBaricentro.fill = "#000000";//"#ff8c00";
+    controlloBaricentro.stroke = "#ffffff";
+    controlloBaricentro.linewidth = 2;
 
     const puntoA = two.makeCircle(0, 0, POINT_RADIUS);
     const puntoB = two.makeCircle(0, 0, POINT_RADIUS);
     const puntoC = two.makeCircle(0, 0, POINT_RADIUS);
-    const puntoD = controlloRettangolo;
+    const puntoD = controlloBaricentro;
 
     puntoA.fill = "#ff4757";
     puntoA.stroke = "#fff";
@@ -298,7 +311,7 @@
     const lato_b = two.makeText("b (Wf)", 0, 0, stileTesto_lato);
     const lato_c = two.makeText("c (Cf)", 0, 0, stileTesto_lato);
 
-    let draggingB = false;
+    let draggingPoint = null;
     let lunghezzaABInRotazione = null;
 
     function clamp(value, min, max) {
@@ -327,6 +340,35 @@
         x: parseFloat(sliders[`${prefix}x`].value),
         y: parseFloat(sliders[`${prefix}y`].value),
       };
+    }
+
+    function isBLockedToD() {
+      return lockBToD.checked;
+    }
+
+    function updateBControlsState() {
+      const disabled = isBLockedToD();
+      sliders.bx.disabled = disabled;
+      sliders.by.disabled = disabled;
+    }
+
+    function applyBLockedToDConstraint() {
+      if (!isBLockedToD()) return;
+
+      const angleDeg = parseFloat(angleABSlider.value);
+      const angleRad = (-angleDeg * Math.PI) / 180;
+      const distanzaAD = RECTANGLE_LENGTH / 2;
+
+      const nuovoBx = A.x + distanzaAD * Math.cos(angleRad);
+      const nuovoBy = A.y + distanzaAD * Math.sin(angleRad);
+
+      estendiRangeSeNecessario(sliders.bx, nuovoBx);
+      estendiRangeSeNecessario(sliders.by, nuovoBy);
+      sliders.bx.value = nuovoBx;
+      sliders.by.value = nuovoBy;
+
+      B.x = nuovoBx;
+      B.y = nuovoBy;
     }
 
     function syncPointsFromSliders() {
@@ -418,24 +460,23 @@
       rettangoloAB.vertices[2].set(p3x, p3y);
       rettangoloAB.vertices[3].set(p4x, p4y);
 
-      const centroRettX = A.x + ux * (RECTANGLE_LENGTH / 2);
-      const centroRettY = A.y + uy * (RECTANGLE_LENGTH / 2);
-      controlloRettangolo.translation.set(centroRettX, centroRettY);
+      const BaricentroX = A.x + ux * (RECTANGLE_LENGTH / 2);
+      const BaricentroY = A.y + uy * (RECTANGLE_LENGTH / 2);
+      controlloBaricentro.translation.set(BaricentroX, BaricentroY);
 
-      const mostraRettangolo = toggleRect.checked;
-      rettangoloAB.visible = mostraRettangolo;
-      controlloRettangolo.visible = mostraRettangolo;
+      rettangoloAB.visible = toggleBranca.checked;
+      controlloBaricentro.visible = toggleBranca.checked;
 
       setCirclePosition(puntoA, A);
       setCirclePosition(puntoB, B);
       setCirclePosition(puntoC, C);
-      puntoD.translation.set(centroRettX, centroRettY);
+      puntoD.translation.set(BaricentroX, BaricentroY);
 
-      return { centroRettX, centroRettY };
+      return { BaricentroX, BaricentroY };
     }
 
-    function updateForces(centroRettX, centroRettY, radA, radB, radC, dAB) {
-      const dAD = Math.hypot(centroRettX - A.x, centroRettY - A.y);
+    function updateForces(BaricentroX, BaricentroY, radA, radB, radC, dAB) {
+      const dAD = Math.hypot(BaricentroX - A.x, BaricentroY - A.y);
       const Wf = dAB > 0 ? (FALLBACK_WEIGHT * dAD) / dAB : 0;
 
       const sinA = Math.sin(radA);
@@ -454,30 +495,60 @@
       forceCells.Cf.textContent = Cf.toFixed(1);
     }
 
-    function startDragB(event) {
+    function startDragPoint(event) {
       const mouse = getMouseCanvasPosition(event);
       const hitRadius = POINT_RADIUS + 6;
       if (Math.hypot(mouse.x - B.x, mouse.y - B.y) <= hitRadius) {
-        draggingB = true;
+        draggingPoint = "B";
+        event.preventDefault();
+        return;
+      }
+      if (Math.hypot(mouse.x - C.x, mouse.y - C.y) <= hitRadius) {
+        draggingPoint = "C";
         event.preventDefault();
       }
     }
 
-    function dragB(event) {
-      if (!draggingB) return;
+    function dragPoint(event) {
+      if (!draggingPoint) return;
       const mouse = getMouseCanvasPosition(event);
-      const minX = parseFloat(sliders.bx.min);
-      const maxX = parseFloat(sliders.bx.max);
-      const minY = parseFloat(sliders.by.min);
-      const maxY = parseFloat(sliders.by.max);
 
-      sliders.bx.value = clamp(mouse.x, minX, maxX);
-      sliders.by.value = clamp(mouse.y, minY, maxY);
+      if (draggingPoint === "B") {
+        if (isBLockedToD()) {
+          const dx = mouse.x - A.x;
+          const dy = mouse.y - A.y;
+          const angleOrizzontaleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
+          const angleSliderDeg = normalizzaAngolo(-angleOrizzontaleDeg);
+          const minAngle = parseFloat(angleABSlider.min);
+          const maxAngle = parseFloat(angleABSlider.max);
+          angleABSlider.value = clamp(angleSliderDeg, minAngle, maxAngle).toFixed(1);
+          aggiornaGeometria();
+          return;
+        }
+
+        const minX = parseFloat(sliders.bx.min);
+        const maxX = parseFloat(sliders.bx.max);
+        const minY = parseFloat(sliders.by.min);
+        const maxY = parseFloat(sliders.by.max);
+
+        sliders.bx.value = clamp(mouse.x, minX, maxX);
+        sliders.by.value = clamp(mouse.y, minY, maxY);
+        aggiornaGeometria();
+        return;
+      }
+
+      const minX = parseFloat(sliders.cx.min);
+      const maxX = parseFloat(sliders.cx.max);
+      const minY = parseFloat(sliders.cy.min);
+      const maxY = parseFloat(sliders.cy.max);
+
+      sliders.cx.value = clamp(mouse.x, minX, maxX);
+      sliders.cy.value = clamp(mouse.y, minY, maxY);
       aggiornaGeometria();
     }
 
-    function endDragB() {
-      draggingB = false;
+    function endDragPoint() {
+      draggingPoint = null;
     }
 
     function normalizzaAngolo(angleDeg) {
@@ -529,6 +600,7 @@
     // 3. Funzione logica principale per aggiornare dati e grafica
     function aggiornaGeometria() {
       syncPointsFromSliders();
+      applyBLockedToDConstraint();
       aggiornaSliderAngoloAB();
       updateCoordinateTable();
 
@@ -540,8 +612,8 @@
       const { radA, radB, radC, degA, degB, degC } = computeTriangleAngles(a, b, c);
 
       updateTriangleAndBranch();
-      const { centroRettX, centroRettY } = updateRectangleGeometry();
-      updateForces(centroRettX, centroRettY, radA, radB, radC, c);
+      const { BaricentroX, BaricentroY } = updateRectangleGeometry();
+      updateForces(BaricentroX, BaricentroY, radA, radB, radC, c);
 
       testoA.value = `A (${degA}°)`;
       testoA.translation.set(A.x - 30, A.y + 25);
@@ -571,7 +643,11 @@
     Object.values(sliders).forEach((slider) => {
       slider.addEventListener("input", aggiornaGeometria);
     });
-    toggleRect.addEventListener("input", aggiornaGeometria);
+    toggleBranca.addEventListener("input", aggiornaGeometria);
+    lockBToD.addEventListener("input", () => {
+      updateBControlsState();
+      aggiornaGeometria();
+    });
     angleABSlider.addEventListener("mousedown", iniziaRotazioneAB);
     angleABSlider.addEventListener("touchstart", iniziaRotazioneAB);
     angleABSlider.addEventListener("input", ruotaBIntornoA);
@@ -579,11 +655,12 @@
     window.addEventListener("mouseup", terminaRotazioneAB);
     window.addEventListener("touchend", terminaRotazioneAB);
 
-    two.renderer.domElement.addEventListener("mousedown", startDragB);
-    window.addEventListener("mousemove", dragB);
-    window.addEventListener("mouseup", endDragB);
+    two.renderer.domElement.addEventListener("mousedown", startDragPoint);
+    window.addEventListener("mousemove", dragPoint);
+    window.addEventListener("mouseup", endDragPoint);
 
     // Avvio iniziale
+    updateBControlsState();
     aggiornaGeometria();
   </script>
 </body>
