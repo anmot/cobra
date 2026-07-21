@@ -97,23 +97,23 @@
       <td>
         <h3 style="color: #ff4757">Punto A</h3>
         <label>X:
-          <input type="range" id="ax" min="80" max="500" value="80" step="20" /></label>
+          <input type="range" id="ax" min="80" max="500" value="80" step="1" /></label>
         <label>Y:
-          <input type="range" id="ay" min="0" max="500" value="320" step="20" /></label>
+          <input type="range" id="ay" min="0" max="500" value="320" step="1" /></label>
       </td>
       <td>
         <h3 style="color: #2ed573">Punto B</h3>
         <label>X:
-          <input type="range" id="bx" min="80" max="500" value="320" step="20" /></label>
+          <input type="range" id="bx" min="80" max="500" value="207.5" step="1" /></label>
         <label>Y:
-          <input type="range" id="by" min="0" max="500" value="320" step="20" /></label>
+          <input type="range" id="by" min="0" max="500" value="168" step="1" /></label>
       </td>
       <td>
         <h3 style="color: #1e90ff">Punto C</h3>
         <label>X:
-          <input type="range" id="cx" min="80" max="500" value="80" step="20" /></label>
+          <input type="range" id="cx" min="80" max="500" value="80" step="1" /></label>
         <label>Y:
-          <input type="range" id="cy" min="0" max="320" value="80" step="20" /></label>
+          <input type="range" id="cy" min="0" max="320" value="136" step="1" /></label>
       </td>
     </tr>
   </table>
@@ -208,7 +208,7 @@
     const RECTANGLE_LENGTH = 400;
     const RECTANGLE_HALF_HEIGHT = 15;
     const POINT_RADIUS = 7;
-    const FALLBACK_WEIGHT = 100;
+    const peso = 100;
 
     const container = document.getElementById("canvas-container");
     const params = { ...CANVAS_SIZE, type: Two.Types.canvas };
@@ -412,12 +412,12 @@
       const radC = Math.acos(Math.max(-1, Math.min(1, (a * a + b * b - c * c) / (2 * a * b))));
 
       return {
-        radA,
-        radB,
-        radC,
-        degA: ((radA * 180) / Math.PI).toFixed(1),
-        degB: ((radB * 180) / Math.PI).toFixed(1),
-        degC: ((radC * 180) / Math.PI).toFixed(1),
+        radA, // Theta3
+        radB, // Theta1
+        radC, // Theta2
+        degA: ((radA * 180) / Math.PI).toFixed(3),
+        degB: ((radB * 180) / Math.PI).toFixed(3),
+        degC: ((radC * 180) / Math.PI).toFixed(3),
       };
     }
 
@@ -477,11 +477,11 @@
 
     function updateForces(BaricentroX, BaricentroY, radA, radB, radC, dAB) {
       const dAD = Math.hypot(BaricentroX - A.x, BaricentroY - A.y);
-      const Wf = dAB > 0 ? (FALLBACK_WEIGHT * dAD) / dAB : 0;
+      const Wf = dAB > 0 ? (peso * dAD) / dAB : 0;
 
-      const sinA = Math.sin(radA);
-      const sinB = Math.sin(radB);
-      const sinC = Math.sin(radC);
+      const sinA = Math.sin(radA); // Theta3
+      const sinB = Math.sin(radB); // Theta1
+      const sinC = Math.sin(radC); // Theta2
 
       let Tf = 0;
       let Cf = 0;
